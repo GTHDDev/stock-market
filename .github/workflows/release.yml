@@ -1,0 +1,35 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main # Triggers only on pushes to the main branch
+
+permissions:
+  contents: write # Required to create releases and push tags
+  issues: write   # Required to comment on and close linked issues
+  pull-requests: write # Required to comment on related PRs
+
+jobs:
+  release:
+    name: Automated Versioning & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history for correct versioning
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci # Ensures exact versions from package-lock.json
+
+      - name: Run Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }} # Your Personal Access Token
+        run: npx semantic-release
