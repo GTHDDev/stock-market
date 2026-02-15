@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0 # Fetches all history for correct versioning
 
       - name: Setup Node.js Environment
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: 'npm'
