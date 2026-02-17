@@ -1,22 +1,22 @@
 version: 2
 updates:
   # 1. Monitoring Node.js dependencies (npm)
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday" # Monday updates to start the week with a clean repo
+      interval: 'weekly'
+      day: 'monday' # Monday updates to start the week with a clean repo
     open-pull-requests-limit: 10
     versioning-strategy: increase
     labels:
-      - "dependencies"
-      - "automated-pr"
+      - 'dependencies'
+      - 'automated-pr'
 
   #2. Monitoring GitHub Actions versions (CI Security)
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     labels:
-      - "ci"
-      - "automated-pr"
+      - 'ci'
+      - 'automated-pr'
