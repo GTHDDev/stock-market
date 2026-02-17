@@ -38,6 +38,15 @@ const buttonVariants = cva(
 	}
 )
 
+/**
+ * Render a styled button or a polymorphic child element with the selected visual variant and size.
+ *
+ * @param className - Additional CSS classes appended to the computed button classes
+ * @param variant - Visual variant to apply (controls colors, borders, and hover/focus styles)
+ * @param size - Size variant to apply (controls padding, height, gap, and SVG sizing)
+ * @param asChild - When true, render a Radix Slot for polymorphic composition; otherwise render a native `button`
+ * @returns The rendered button or slot element with data attributes (`data-variant`, `data-size`, `data-slot`) and composed classes
+ */
 function Button({
 	className,
 	variant = 'default',

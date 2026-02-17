@@ -18,6 +18,12 @@ export const metadata: Metadata = {
 		'Track real-time stock prices, get personalized alerts and explore detailed company insights.'
 }
 
+/**
+ * Root layout component that provides the application's HTML root with global fonts and a dark theme.
+ *
+ * @param children - The page content to render inside the document body
+ * @returns The root HTML element containing the provided children
+ */
 export default function RootLayout({
 	children
 }: Readonly<{
