@@ -15,12 +15,18 @@ const useTradingViewWidget = (
 		if (!currentContainer) return
 		if (currentContainer.dataset.loaded) return
 
-		currentContainer.innerHTML = `<div class="tradingview-widget-container__widget" style="width: 100%; height: ${height}px;"></div>`
+		const widget = document.createElement('div')
+		widget.className = 'tradingview-widget-container__widget'
+		widget.style.width = '100%'
+		widget.style.height = `${height}px`
+		currentContainer.replaceChildren(widget)
 
 		const script = document.createElement('script')
 		script.src = scriptUrl
 		script.async = true
-		script.innerHTML = JSON.stringify(config)
+		script.textContent = JSON.stringify(config)
+
+		currentContainer.appendChild(script)
 
 		currentContainer.appendChild(script)
 		currentContainer.dataset.loaded = 'true'

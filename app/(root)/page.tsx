@@ -24,7 +24,7 @@ export default function Home() {
 
 				<div className='md:col-span-1 xl:col-span-2'>
 					<TradingViewWidget
-						title='Stock Heapmap'
+						title='Stock Heatmap'
 						scriptUrl={`${scriptUrl}stock-heatmap.js`}
 						config={HEATMAP_WIDGET_CONFIG}
 						className='custom-chart'
