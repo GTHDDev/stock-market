@@ -5,13 +5,19 @@ import { POPULAR_STOCK_SYMBOLS } from '@/lib/constants'
 import { cache } from 'react'
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1'
-const NEXT_PUBLIC_FINNHUB_API_KEY =
-	process.env.NEXT_PUBLIC_FINNHUB_API_KEY ?? ''
+const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || ''
 
 async function fetchJSON<T>(
 	url: string,
 	revalidateSeconds?: number
 ): Promise<T> {
+	const parsedUrl = new URL(url)
+	const allowedOrigin = new URL(FINNHUB_BASE_URL).origin
+
+	if (parsedUrl.origin !== allowedOrigin) {
+		throw new Error(`Unauthorized origin: ${parsedUrl.origin}`)
+	}
+
 	const options: RequestInit & { next?: { revalidate?: number } } =
 		revalidateSeconds
 			? { cache: 'force-cache', next: { revalidate: revalidateSeconds } }
@@ -32,29 +38,34 @@ export async function getNews(
 ): Promise<MarketNewsArticle[]> {
 	try {
 		const range = getDateRange(5)
-		const token = process.env.FINNHUB_API_KEY ?? NEXT_PUBLIC_FINNHUB_API_KEY
+		const token = FINNHUB_API_KEY
 		if (!token) {
 			throw new Error('FINNHUB API key is not configured')
 		}
-		const cleanSymbols = (symbols || [])
-			.map((s) => s?.trim().toUpperCase())
+		const cleanSymbols = Array.from(
+			new Set((symbols || []).map((s) => s?.trim().toUpperCase()))
+		)
 			.filter((s): s is string => Boolean(s))
+			.slice(0, 12)
 
 		const maxArticles = 6
 
 		// If we have symbols, try to fetch company news per symbol and round-robin select
 		if (cleanSymbols.length > 0) {
-			const perSymbolArticles: Record<string, RawNewsArticle[]> = {}
+			const perSymbolArticles = new Map<string, RawNewsArticle[]>()
 
 			await Promise.all(
 				cleanSymbols.map(async (sym) => {
 					try {
-						const url = `${FINNHUB_BASE_URL}/company-news?symbol=${encodeURIComponent(sym)}&from=${range.from}&to=${range.to}&token=${token}`
+						const url = `${FINNHUB_BASE_URL}/company-news?symbol=${encodeURIComponent(
+							sym
+						)}&from=${range.from}&to=${range.to}&token=${token}`
 						const articles = await fetchJSON<RawNewsArticle[]>(url, 300)
-						perSymbolArticles[sym] = (articles || []).filter(validateArticle)
+						perSymbolArticles.set(sym, (articles || []).filter(validateArticle))
 					} catch (e) {
-						console.error('Error fetching company news for', sym, e)
-						perSymbolArticles[sym] = []
+						const safeSym = sym.replace(/[\r\n]/g, '')
+						console.error('Error fetching company news for', safeSym, e)
+						perSymbolArticles.set(sym, [])
 					}
 				})
 			)
@@ -62,13 +73,16 @@ export async function getNews(
 			const collected: MarketNewsArticle[] = []
 			// Round-robin up to 6 picks
 			for (let round = 0; round < maxArticles; round++) {
-				for (let i = 0; i < cleanSymbols.length; i++) {
-					const sym = cleanSymbols[i]
-					const list = perSymbolArticles[sym] || []
+				for (const sym of cleanSymbols) {
+					const list = perSymbolArticles.get(sym) || []
 					if (list.length === 0) continue
 					const article = list.shift()
-					if (!article || !validateArticle(article)) continue
+					if (!article || !validateArticle(article)) {
+						perSymbolArticles.set(sym, list)
+						continue
+					}
 					collected.push(formatArticle(article, true, sym, round))
+					perSymbolArticles.set(sym, list)
 					if (collected.length >= maxArticles) break
 				}
 				if (collected.length >= maxArticles) break
@@ -110,7 +124,7 @@ export async function getNews(
 export const searchStocks = cache(
 	async (query?: string): Promise<StockWithWatchlistStatus[]> => {
 		try {
-			const token = process.env.FINNHUB_API_KEY ?? NEXT_PUBLIC_FINNHUB_API_KEY
+			const token = FINNHUB_API_KEY
 			if (!token) {
 				// If no token, log and return empty to avoid throwing per requirements
 				console.error(
@@ -171,11 +185,7 @@ export const searchStocks = cache(
 				.map((r) => {
 					const upper = (r.symbol || '').toUpperCase()
 					const name = r.description || upper
-					const exchangeFromDisplay =
-						(r.displaySymbol as string | undefined) || undefined
-					const exchangeFromProfile = (r as FinnhubSearchResultInternal)
-						.__exchange
-					const exchange = exchangeFromDisplay || exchangeFromProfile || 'US'
+					const exchange = (r as FinnhubSearchResultInternal).__exchange || 'US'
 					const type = r.type || 'Stock'
 					const item: StockWithWatchlistStatus = {
 						symbol: upper,

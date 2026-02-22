@@ -179,7 +179,7 @@ declare global {
 	}
 
 	type MarketNewsArticle = {
-		id: number
+		id: string
 		headline: string
 		summary: string
 		source: string
@@ -220,7 +220,7 @@ declare global {
 	}
 
 	type RawNewsArticle = {
-		id: number
+		id: number | string
 		headline?: string
 		summary?: string
 		source?: string

@@ -84,21 +84,29 @@ export const formatArticle = (
 	isCompanyNews: boolean,
 	symbol?: string,
 	index: number = 0
-) => ({
-	id: isCompanyNews ? Date.now() + Math.random() : article.id + index,
-	headline: article.headline!.trim(),
-	summary:
-		article.summary!.trim().substring(0, isCompanyNews ? 200 : 150) + '...',
-	source: article.source || (isCompanyNews ? 'Company News' : 'Market News'),
-	url: article.url!,
-	datetime: article.datetime!,
-	image: article.image || '',
-	category: isCompanyNews ? 'company' : article.category || 'general',
-	related: isCompanyNews ? symbol! : article.related || ''
-})
+) => {
+	const limit = isCompanyNews ? 200 : 150
+	const trimmedSummary = (article.summary || '').trim()
+	const summary =
+		trimmedSummary.length > limit
+			? trimmedSummary.substring(0, limit) + '...'
+			: trimmedSummary
+
+	return {
+		id: isCompanyNews ? crypto.randomUUID() : `${article.id}-${index}`,
+		headline: (article.headline || '').trim(),
+		summary,
+		source: article.source || (isCompanyNews ? 'Company News' : 'Market News'),
+		url: article.url!,
+		datetime: article.datetime!,
+		image: article.image || '',
+		category: isCompanyNews ? 'company' : article.category || 'general',
+		related: isCompanyNews ? (symbol ?? '') : article.related || ''
+	}
+}
 
 export const formatChangePercent = (changePercent?: number) => {
-	if (!changePercent) return ''
+	if (changePercent == null) return ''
 	const sign = changePercent > 0 ? '+' : ''
 	return `${sign}${changePercent.toFixed(2)}%`
 }
@@ -115,14 +123,6 @@ export const formatPrice = (price: number) => {
 		minimumFractionDigits: 2
 	}).format(price)
 }
-
-export const formatDateToday = new Date().toLocaleDateString('en-US', {
-	weekday: 'long',
-	year: 'numeric',
-	month: 'long',
-	day: 'numeric',
-	timeZone: 'UTC'
-})
 
 export const getAlertText = (alert: Alert) => {
 	const condition = alert.alertType === 'upper' ? '>' : '<'
