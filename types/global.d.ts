@@ -73,6 +73,12 @@ declare global {
 		email: string
 	}
 
+	type UserForNewsEmail = {
+		id: string
+		email: string
+		name: string
+	}
+
 	type Stock = {
 		symbol: string
 		name: string
@@ -94,6 +100,26 @@ declare global {
 	type FinnhubSearchResponse = {
 		count: number
 		result: FinnhubSearchResult[]
+	}
+
+	type FinnhubStockProfile = {
+		name?: string
+		ticker?: string
+		exchange?: string
+		country?: string
+		currency?: string
+		estimateCurrency?: string
+		finnhubIndustry?: string
+		ipo?: string
+		logo?: string
+		marketCapitalization?: number
+		phone?: string
+		shareOutstanding?: number
+		weburl?: string
+	}
+
+	interface FinnhubSearchResultInternal extends FinnhubSearchResult {
+		__exchange?: string
 	}
 
 	type StockDetailsPageProps = {
@@ -153,7 +179,7 @@ declare global {
 	}
 
 	type MarketNewsArticle = {
-		id: number
+		id: string
 		headline: string
 		summary: string
 		source: string
@@ -194,7 +220,7 @@ declare global {
 	}
 
 	type RawNewsArticle = {
-		id: number
+		id: number | string
 		headline?: string
 		summary?: string
 		source?: string
