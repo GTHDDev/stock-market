@@ -12,10 +12,13 @@ async function fetchJSON<T>(
 	revalidateSeconds?: number
 ): Promise<T> {
 	const parsedUrl = new URL(url)
-	const allowedOrigin = new URL(FINNHUB_BASE_URL).origin
 
-	if (parsedUrl.origin !== allowedOrigin) {
-		throw new Error(`Unauthorized origin: ${parsedUrl.origin}`)
+	if (
+		parsedUrl.protocol !== 'https:' ||
+		parsedUrl.hostname !== 'finnhub.io' ||
+		!parsedUrl.pathname.startsWith('/api/v1')
+	) {
+		throw new Error(`Unauthorized or invalid Finnhub URL: ${url}`)
 	}
 
 	const options: RequestInit & { next?: { revalidate?: number } } =
@@ -57,10 +60,16 @@ export async function getNews(
 			await Promise.all(
 				cleanSymbols.map(async (sym) => {
 					try {
-						const url = `${FINNHUB_BASE_URL}/company-news?symbol=${encodeURIComponent(
-							sym
-						)}&from=${range.from}&to=${range.to}&token=${token}`
-						const articles = await fetchJSON<RawNewsArticle[]>(url, 300)
+						const url = new URL(`${FINNHUB_BASE_URL}/company-news`)
+						url.searchParams.set('symbol', sym)
+						url.searchParams.set('from', range.from)
+						url.searchParams.set('to', range.to)
+						url.searchParams.set('token', token)
+
+						const articles = await fetchJSON<RawNewsArticle[]>(
+							url.toString(),
+							300
+						)
 						perSymbolArticles.set(sym, (articles || []).filter(validateArticle))
 					} catch (e) {
 						const safeSym = sym.replace(/[\r\n]/g, '')
@@ -97,8 +106,13 @@ export async function getNews(
 		}
 
 		// General market news fallback or when no symbols provided
-		const generalUrl = `${FINNHUB_BASE_URL}/news?category=general&token=${token}`
-		const general = await fetchJSON<RawNewsArticle[]>(generalUrl, 300)
+		const generalUrl = new URL(`${FINNHUB_BASE_URL}/news`)
+		generalUrl.searchParams.set('category', 'general')
+		generalUrl.searchParams.set('token', token)
+		const general = await fetchJSON<RawNewsArticle[]>(
+			generalUrl.toString(),
+			300
+		)
 
 		const seen = new Set<string>()
 		const unique: RawNewsArticle[] = []
@@ -144,9 +158,14 @@ export const searchStocks = cache(
 				const profiles = await Promise.all(
 					top.map(async (sym) => {
 						try {
-							const url = `${FINNHUB_BASE_URL}/stock/profile2?symbol=${encodeURIComponent(sym)}&token=${token}`
+							const url = new URL(`${FINNHUB_BASE_URL}/stock/profile2`)
+							url.searchParams.set('symbol', sym)
+							url.searchParams.set('token', token)
 							// Revalidate every hour
-							const profile = await fetchJSON<FinnhubStockProfile>(url, 3600)
+							const profile = await fetchJSON<FinnhubStockProfile>(
+								url.toString(),
+								3600
+							)
 							return { sym, profile }
 						} catch (e) {
 							console.error('Error fetching profile2 for', sym, e)
@@ -176,8 +195,13 @@ export const searchStocks = cache(
 					})
 					.filter((x): x is FinnhubSearchResultInternal => Boolean(x))
 			} else {
-				const url = `${FINNHUB_BASE_URL}/search?q=${encodeURIComponent(trimmed)}&token=${token}`
-				const data = await fetchJSON<FinnhubSearchResponse>(url, 1800)
+				const url = new URL(`${FINNHUB_BASE_URL}/search`)
+				url.searchParams.set('q', trimmed)
+				url.searchParams.set('token', token)
+				const data = await fetchJSON<FinnhubSearchResponse>(
+					url.toString(),
+					1800
+				)
 				results = Array.isArray(data?.result) ? data.result : []
 			}
 
