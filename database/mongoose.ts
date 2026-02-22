@@ -15,8 +15,8 @@ if (!cached) {
 	cached = global.mongooseCache = { conn: null, promise: null }
 }
 
-export const connectToDabase = async () => {
-	if (!MONGODB_URI) throw new Error('MONGOBD_URI must be set')
+export const connectToDatabase = async () => {
+	if (!MONGODB_URI) throw new Error('MONGODB_URI must be set within .env')
 
 	if (cached.conn) return cached.conn
 
@@ -31,5 +31,7 @@ export const connectToDabase = async () => {
 		throw err
 	}
 
-	console.log(`Connected to database ${process.env.NODE_ENV}`)
+	console.log(`Connected to database ${process.env.NODE_ENV} - ${MONGODB_URI}`)
+
+	return cached.conn
 }

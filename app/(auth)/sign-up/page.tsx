@@ -4,6 +4,7 @@ import FooterLink from '@/components/form/FooterLink'
 import InputField from '@/components/form/InputField'
 import SelectField from '@/components/form/SeletecField'
 import { Button } from '@/components/ui/button'
+import { signUpWithEmail } from '@/lib/actions/auth.actions'
 import {
 	INVESTMENT_GOALS,
 	PREFERRED_INDUSTRIES,
@@ -11,6 +12,7 @@ import {
 } from '@/lib/constants'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 const SignUp = () => {
 	const router = useRouter()
@@ -35,9 +37,14 @@ const SignUp = () => {
 
 	const onSubmit = async (data: SignUpFormData) => {
 		try {
-			const result = null
-		} catch (err) {
-			console.error(err)
+			const result = await signUpWithEmail(data)
+			if (result.success) router.push('/')
+		} catch (e) {
+			console.error(e)
+			toast.error('Sign up failed', {
+				description:
+					e instanceof Error ? e.message : 'Failed to create an account.'
+			})
 		}
 	}
 
@@ -58,7 +65,7 @@ const SignUp = () => {
 				<InputField
 					name='email'
 					label='Email'
-					placeholder='contact@jsmastery.com'
+					placeholder='example@email.com'
 					register={register}
 					error={errors.email}
 					validation={{

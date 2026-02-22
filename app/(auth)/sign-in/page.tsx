@@ -1,9 +1,12 @@
 'use client'
-import FooterLink from '@/components/form/FooterLink'
-import InputField from '@/components/form/InputField'
-import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
+
 import { useForm } from 'react-hook-form'
+import { Button } from '@/components/ui/button'
+import { signInWithEmail } from '@/lib/actions/auth.actions'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import InputField from '@/components/form/InputField'
+import FooterLink from '@/components/form/FooterLink'
 
 const SignIn = () => {
 	const router = useRouter()
@@ -21,11 +24,16 @@ const SignIn = () => {
 
 	const onSubmit = async (data: SignInFormData) => {
 		try {
-			const result = null
-		} catch (err) {
-			console.error(err)
+			const result = await signInWithEmail(data)
+			if (result.success) router.push('/')
+		} catch (e) {
+			console.error(e)
+			toast.error('Sign in failed', {
+				description: e instanceof Error ? e.message : 'Failed to sign in.'
+			})
 		}
 	}
+
 	return (
 		<>
 			<h1 className='form-title'>Welcome back</h1>
@@ -34,7 +42,7 @@ const SignIn = () => {
 				<InputField
 					name='email'
 					label='Email'
-					placeholder='contact@jsmastery.com'
+					placeholder='example@email.com'
 					register={register}
 					error={errors.email}
 					validation={{
@@ -70,5 +78,4 @@ const SignIn = () => {
 		</>
 	)
 }
-
 export default SignIn
