@@ -26,7 +26,7 @@ async function fetchJSON<T>(
 			? { cache: 'force-cache', next: { revalidate: revalidateSeconds } }
 			: { cache: 'no-store' }
 
-	const res = await fetch(url, options)
+	const res = await fetch(parsedUrl.toString(), options)
 	if (!res.ok) {
 		const text = await res.text().catch(() => '')
 		throw new Error(`Fetch failed ${res.status}: ${text}`)
@@ -72,8 +72,15 @@ export async function getNews(
 						)
 						perSymbolArticles.set(sym, (articles || []).filter(validateArticle))
 					} catch (e) {
-						const safeSym = sym.replace(/[\r\n]/g, '')
-						console.error('Error fetching company news for', safeSym, e)
+						const safeSym = (sym || '').replace(/[\r\n]/g, '')
+						const rawErrorMessage = e instanceof Error ? e.message : String(e)
+						const safeErrorMessage = rawErrorMessage.replace(/[\r\n]/g, ' ')
+						console.error(
+							'Error fetching company news for',
+							safeSym,
+							':',
+							safeErrorMessage
+						)
 						perSymbolArticles.set(sym, [])
 					}
 				})
@@ -86,7 +93,7 @@ export async function getNews(
 					const list = perSymbolArticles.get(sym) || []
 					if (list.length === 0) continue
 					const article = list.shift()
-					if (!article || !validateArticle(article)) {
+					if (!article) {
 						perSymbolArticles.set(sym, list)
 						continue
 					}
@@ -130,7 +137,9 @@ export async function getNews(
 			.map((a, idx) => formatArticle(a, false, undefined, idx))
 		return formatted
 	} catch (err) {
-		console.error('getNews error:', err)
+		const rawMessage = err instanceof Error ? err.message : String(err)
+		const safeMessage = rawMessage.replace(/[\r\n]+/g, ' ')
+		console.error('getNews error:', safeMessage)
 		throw new Error('Failed to fetch news')
 	}
 }
@@ -168,7 +177,17 @@ export const searchStocks = cache(
 							)
 							return { sym, profile }
 						} catch (e) {
-							console.error('Error fetching profile2 for', sym, e)
+							const message =
+								e instanceof Error
+									? e.message.replace(/[\r\n]/g, ' ')
+									: String(e).replace(/[\r\n]/g, ' ')
+							const safeSym = (sym || '').replace(/[\r\n]/g, '')
+							console.error(
+								'Error fetching profile2 for',
+								safeSym,
+								'-',
+								message
+							)
 							return { sym, profile: null }
 						}
 					})
@@ -224,7 +243,19 @@ export const searchStocks = cache(
 
 			return mapped
 		} catch (err) {
-			console.error('Error in stock search:', err)
+			const anyErr = err as {
+				name?: unknown
+				message?: unknown
+				stack?: unknown
+			}
+			const sanitize = (value: unknown): string =>
+				String(value ?? '').replace(/[\r\n]+/g, ' ')
+			const safeErrorInfo = {
+				name: sanitize(anyErr.name),
+				message: sanitize(anyErr.message),
+				stack: sanitize(anyErr.stack)
+			}
+			console.error('Error in stock search:', safeErrorInfo)
 			return []
 		}
 	}
